@@ -1,0 +1,127 @@
+////////////////////////////////////////////////////////////////////////////////Right redirec /////DONE
+////////////////////////Tests
+- echoq coucou > oui > echo text > fichier /// DONE
+- echo coucou > oui > echo text > fichier ///DONE
+- echo coucou > oui > echoq text > fichier -> second argument of echoq is executed by echo, same functioning as >>, first command takes arguments from following //DONE
+- cat main.c > echo main2.c main3.c > fichier -> main.c main2.c main3.c should all be cat //DONE
+- cat main.c > echo main2.c > fichier main3.c -> main.c main2.c main3.c should all be cat //DONE
+- pwd > t > t !!!!!!!!!!!! Shows two times error (t exists as a directory) instead of one -> plus it executes pwd to the stdin ///OK
+////////////////////////Explanation
+--> cat does not work because of file trimming, file trimming should not be used anymore, but first command should be executed only while containing all the arguments following the other commands
+First word of all commands are created into files. First command executes with the words following the first one and the other commands words following the first one.
+When it executes the stdout is redirected to the last file created from the right redirection followup.
+
+
+////////////////////////////////////////////////////////////////////////////////Double right /////DONE
+////////////////////////Tests
+///Double right redirection
+- echo coucou >> oui
+- echo coucou >> oui >> echo text >> fichier -> coucou and text, are put on same line //DONE
+- pwd >> pwd >> f -> pwd only once in f //DONE
+- echo coucou >> pwd >> f -> only coucou in f //DONE
+- echo coucou >> cat main.c >> f -> it echoes coucou main.c //DONE
+- cat main.c >> echo coucou >> f -> it will only cat the main.c because it won't be able to cat inexisting file coucou, it will return an error for cat coucou //DONE
+- cat main.c >> pwd main2.c >> f -> it will cat in f both main.c and main2.c //DONE
+- cat main.c >> cat main.c >> f -> two times main.c in f//DONE
+////////////////////////Explanation
+Similar as right redirection, sole difference is that the double right redirection appends to the file when writing.
+
+////////////////////////////////////////////////////////////////////////////////Double left redirection ///DONE
+////////////////////////Tests
+- Test with a program that takes input from the stdout when executing
+- Test the argument after the << with spaces, multiple words, quotes with multiple words inside
+////////////////////////Explanation
+First command is executed once your input matches with the argument following the <<. What you wrote before executing the first command gets redirected to the stdin when executing
+
+////////////////////////////////////////////////////////////////////////////////Left redirec /////DONE
+////////////////////////Tests
+- ./a 0 < main.c < main2.c //DONE
+- ./a 0 < dwdw < main2.c //DONE
+- wwdd < text.txt < main2.c //DONE
+////////////////////////Explanation
+Stdin is redirected to last file from the left redirection followup when first command is executed
+
+
+////////////////////////////////////////////////////////////////////////////////Pipes & mix
+////////////////////////Tests
+- ./a2 | echo no < n | echo yes < y | cat | ./a -> the command echo yes will be piped into the cat that pipes into the ./a-> so the command transforms into echo yes | cat |./a-> the pipe does not take place if the file y does not exist ///OK
+- same test but with an unexisting file y ///DONE
+- ./a2 | echo non < no | echo oui < yes | cat main.c -> main.c will be cat while yes gets piped to it which has no effect ///DONE
+- ./a2 | echo non < no | echo oui < yes -> the left redirection will execute ///DONE
+- ./a2 | echo non > no | echo oui > yes | cat | ./a-> right redirection executed and cat too (in this case cat gets executed something empty, but not nothing to avoid infinite loop) ///DONE
+- ./a2 | echo non > no | echo oui > yes -> all right redirections are executed ///DONE
+- ./a2 | echo non > no | echo oui > yes | pwd ->all right redirections are executed plus pwd is executed in stdin ///DONE
+- ./a2 | echo non < no | echo oui < yes | cat ->pwd is executed in stdin with echo yes piped to it which has no effect on pwd ///DONE
+- ./a3 | cat | cat < oui | cat -> output: ok + infinite loop //99% done, just doesn't execute ./a3 which has no utility...Wtf bash  -> exec first pipes at the end, close it's stdout/stderr, reopen using dups ////DONE
+- echo coucou | echo lol | cat < yes | echo mdr --> !!!!!!!!!!!!!!!! Invalid argument + bad file descriptor error that enters errnoq, when executing pipe_commands with closed stdout, resolved with if conditions inside errnoq ///DONE
+- pwd | echo no > no | echo ouo < yes | pwd ///DONE
+- base64 /dev/urandom | head -c 1000 -> should not infinite loop. //DONE
+- cat main.c | ./a ///DONE
+- ./a | pwd ///DONE -> + ctrl-c that functions correctly ///DONE
+- pwd | pwd | cat main.c | ./a -> cat is executed with ./a ///DONE
+- pwd | pwd | ./a | cat main.c -> only cat is executed ///DONE
+- pwd | pwd | ./a | cat ///DONE
+- ./a | dwdw | pwd | ./a !!! Not same order for error message but no one cares :D //DONE
+- ./a | grep c >./a | grep c > lol lol-> ./a should not be executed //DONE -------> !!!!!!!!!!
+- echo lol |exit ///DONE
+////////////////////////Explanation
+-> The pipe before any redirection should not be redirected to the pipes after the redirection, redirections break the pipe ///DONE
+-> right redirection does not pipe to the command after the pipe while the left redirection does, because of that the pipe has priority on the left redirection.
+-> the left redirection does not execute if it is followed by a pipe,///DONE
+-> left redirection: but the pipe executes in a special way example: echo yes < yes | cat | ./a becomes echo yes | cat | ./a ///DONE
+-> left redirection does not execute if in the command another < exists that is not right after the other ones or if file does not exist/error occurs ///DONE
+-> because right redirection does not pipe to the following pipe command, cat can execute on its own and infinite loop to avoid this give cat or any other executable a \0 to read in the kernel instead of void
+-> right redirec ex: echo yes > yes | cat | ./a -> void | cat | ./a ///DONE
+
+////////////////////////////////////////////////////////////////////////////////Combine < > > < ///DONE
+////////////////////////Tests
+- ./a < main.c > s   --> main.c is redirected to the stdin while ./a is executed with the stdout redirected to the created file t ///DONE
+- test with nonexisting main.c //DONE
+- ede < main.c > s > l| pwd //DONE
+- ./a > t.txt < main.c   --> main.c is redirected to the stdin while ./a is executed with the stdout redirected to the created file t --> If main.c does not exist t.txt should be created //DONE
+- test with nonexisting main.c ///DONE
+- ddw > t.txt < main.c ///DONE
+- ./a > t.txt > t < main.c -->in the end the stdout is only executed to the last indicated file t ///DONE
+- ./a > t.txt < main.c < main2.c --> main2.c or the last indicated file is redirected to the stdin while ./a is executed ///DONE
+- ./a < main.c > t > t.txt  --> in the end the stdout is only executed to the last indicated file t.txt ///DONE
+- ./a < main.c < main2.c > t  --> main2.c or the last indicated file is redirected to the stdin while ./a is executed ///DONE
+- ./a < main.c < main2.c >> t //DONE
+- ./a >> t < main.c < main2.c //DONE
+- ./a > t.txt > t < main.c < main2.c --> main2.c will end up in the file t //DONE
+- ./a < main.c > s > l| pwd --> the pipe command pwd is executed and does not take as pipe t or main.c. the redirection mix always executes and does not pipe to the following pipe when the redirection mix starts with a left redirection and thus ends with a right redirection. ///DONE
+- ./a < main.c > t | pwd | cat ///DONE
+- ./a > t.txt < main.c | ./a --> the pipe command ./a is executed and does not take as pipe t.txt or main.c. the redirection mix always executes and does not pipe to the following pipe when the redirection mix starts with a left redirection and thus ends with a right redirection. ///DONE
+////////////////////////Explanation
+- test with following pipes
+- Create a function that executes the following ./a < main.c > t   --> main.c is redirected to the stdin while ./a is executed with the stdout redirected to the created file t
+--> redirect the stdout to the created file (right redirection), exec_shell the command joined to the left redirection follow ups, exec_shell the commands that follows
+--> ft_right_redirection should take as first parameter (command + left redirections), as second argument the right redirections, in struct take boolean
+- Create function that splits in two parts: command + left redirections | right redirections
+- parse directly from shellparsing, after split the command line and call the function to exec -> use char *ft_set_right_redir_pipe(char *next_cmd)
+- Modify parsing to also handle double right redirec
+
+////////////////////////////////////////////////////////////////////////////////Combine < > > < ///DONE
+////////////////////////Tests
+- echo ">"
+- echo ">" > text
+- echo ">" hello > text
+- echo "> hello>" > text
+
+
+////////////////////////////////////////////////////////////////////////////////OTHER BUGS
+- only > or < << or >> ///DONE
+- Error message when double left redirection comes together with other tokens //DONE
+- ./a >r>r<l<f -> syntax near unexpected token !!! //DONE
+- Protect all mallocs !printfs return -1 on error! ///DONE
+- test leaks in redirection combination ///DONE
+- norminette ///DONE
+- test_errors_norm -> line 82 -> right or not ??????
+- DS_store !!!!
+- char	*pipe_buffer; (minishell.c) is a global but doesn't have g_ !!!!
+
+////////////////////////////////////////////////////////////////////////////////Last push bugs
+echo ';'
+echo "\$USER"
+echo '$TERM         ;   $term'
+./a | grep c >./a | grep c > lol lol -> Test works on certain computers/setups and not others for unknown reason
+
