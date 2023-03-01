@@ -1,6 +1,6 @@
 # minishell
 
-42 school [subject](https://cdn.intra.42.fr/pdf/pdf/68418/en.subject.pdf).
+42 school [subject](https://cdn.intra.42.fr/pdf/pdf/68418/en.subject.pdf)
 
 Write in C, without external libraries besides certain allowed functions, a shell.
 
